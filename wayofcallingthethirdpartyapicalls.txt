@@ -1,0 +1,158 @@
+  
+  
+  api call through rest template 
+  
+  RestTemplate restTemplate = new RestTemplate();
+			  HttpHeaders headers = new HttpHeaders();
+			  headers.setContentType(MediaType.APPLICATION_JSON);
+			  
+			  /// the above set  the request body ie media type if it is the json put it as application_json or in case xml request based
+			  
+			  
+			  HttpEntity<AdhikritmodelReq> entity = new HttpEntity<AdhikritmodelReq>(headers);
+           ///here instead of the Adhikritmodel we have to give our request body 
+			  
+			  String url = "http://127.0.0.1:8244/upload/students";
+            ///the above url ie to which url or the endpoint we want to call through the rest template 
+			  
+			  
+			  
+		System.out.println("the requestBody is :::::::::::::::::::::::::::"+ new Gson().toJson(adhikritmodel));	  
+			  
+			  
+		       ResponseData responsedata = restTemplate.postForObject(url, adhikritmodel, ResponseData.class);
+		       
+		       /// in the above set the url,our request body and response.class, and use the http request method according to the url that you are hitting ie if it is postMapping use .postForObject or if it is .getForObject
+		       
+
+			  
+			   System.out.println("the response from the api ie implemente through the rest template "+new Gson().toJson(responsedata));
+			   
+	--------------		   -----------------------------------------------------------------------------------------------------------------------
+			   retrofit configuration;
+			   
+			   package com.olivecrypto;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.core.env.Environment;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.olivecrypto.response.RetroWelcome;
+
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
+@ComponentScan
+@Configuration
+public class ConnectionEstablishment {
+	 
+	
+	@Autowired
+	private Environment env;
+	 @Bean
+	   public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
+	     return new PropertySourcesPlaceholderConfigurer();
+	   }
+	   
+	   @Bean
+	   RetroWelcome getUpiService(){
+		  // TokenInterceptor interceptor=new TokenInterceptor(tokenUserName);
+	  	
+	// okHttpClient.setI
+	    Gson gson = new GsonBuilder()
+	           .setLenient()
+	           .create();
+	     Retrofit server = new Retrofit.Builder()
+	    .baseUrl("http://127.0.0.1:8033")//base url ie to which port you are hitting the request body 
+	    .addConverterFactory(GsonConverterFactory.create(gson))
+	    
+	    .build();
+	     RetroWelcome upiserver=server.create(RetroWelcome.class);
+	     return upiserver;
+	   }
+
+}
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+common interface where you mention all the apis through which you call to the other api present in another application ;
+
+
+package com.olivecrypto.response;
+
+
+
+import com.olivecrypto.vo.AdhikritmodelReq;
+import com.olivecrypto.vo.Response;
+
+import retrofit2.Call;
+import retrofit2.http.Body;
+import retrofit2.http.POST;
+
+
+public interface RetroWelcome {
+
+	// mention all the apis for which you want to call through the retrofit configuration in interface
+	
+	//now make sure the api you are hitting from here should have the same request body and response body both in this retrofit applicaiton and the same url present in the receiving application
+	 @POST("/save")
+	   public  Call<Response> saveStudentsData(@Body AdhikritmodelReq adhikritmodel); 	
+}
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+controller file for the retrofit api calls example;
+
+
+
+package com.olivecrypto.controller;
+
+import java.io.IOException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.olivecrypto.response.RetroWelcome;
+import com.olivecrypto.vo.AdhikritmodelReq;
+import com.olivecrypto.vo.Response;
+
+@RestController
+public class TestingController {
+	
+	@Autowired
+	RetroWelcome retroWelcome;
+	
+	@PostMapping(path="/save/students", consumes = "application/json" ,produces = "application/json")
+
+	public Response saveStudent(@RequestBody AdhikritmodelReq adhikritmodel) {
+		System.out.println("im in zip save student:::::::::::");
+		
+		try {
+			 Response response = retroWelcome.saveStudentsData(adhikritmodel).execute().body();
+			
+			return response;
+		} catch (IOException e) {
+
+			e.printStackTrace();
+		}
+		return null;
+
+	     
+	    }
+	
+	@PostMapping("/retrofit/test/call")
+	public String retrofitTestCall()
+	{
+		
+		return "retrofit test/call passed successfully";
+	}
+
+}
+--------------------------------------------------------------------------------------------
